@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calculator</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background-color: #000; display: flex; justify-content: center; align-items: flex-end; height: 100vh; overflow: hidden; padding-bottom: 20px; }
@@ -37,7 +42,13 @@
     
     <div class="grid">
         <button class="btn-top-row backspace-text" onclick="handleBackspace()">⌫</button>
-        <button class="btn-top-row" onclick="handleClear()">AC</button>
+        
+        <button class="btn-top-row" 
+                onmousedown="startPress()" 
+                onmouseup="endPress()" 
+                ontouchstart="startPress()" 
+                ontouchend="endPress()">AC</button>
+                
         <button class="btn-top-row" onclick="appendOp('%')">%</button>
         <button class="btn-op" onclick="appendOp('÷')">÷</button>
 
@@ -66,13 +77,14 @@
 <script>
     const FORCE_NUMBER = "4290411351073"; 
 
-    let currentInput = "0";      // What the user is typing right now
-    let runningTotal = 0;        // Hidden mathematical running evaluation total
-    let mathTrack = "";          // Running formula string displayed at the top
-    let lastOperator = "";       // Stores the active operation modifier
+    let currentInput = "0";      
+    let runningTotal = 0;        
+    let mathTrack = "";          
+    let lastOperator = "";       
     
     let isArmed = false;
-    let lastClearTime = 0;
+    let pressTimer = null;
+    let isLongPress = false;
     let justEvaluated = false;
     let awaitingNewInput = false; 
 
@@ -100,6 +112,28 @@
             return parts.join('.');
         }
         return val;
+    }
+
+    /* Long-Press Capture System */
+    function startPress() {
+        isLongPress = false;
+        pressTimer = setTimeout(() => {
+            isLongPress = true;
+            isArmed = !isArmed;
+            
+            // Subtle flash indicator to tell you engine status
+            if (isArmed) {
+                mainDisplay.style.color = "#aeffb4";
+                setTimeout(() => mainDisplay.style.color = "#fff", 120);
+            }
+        }, 500); // 500ms hold requirement
+    }
+
+    function endPress() {
+        clearTimeout(pressTimer);
+        if (!isLongPress) {
+            handleClear();
+        }
     }
 
     function appendNum(num) {
@@ -149,7 +183,6 @@
         let inputValue = parseFloat(currentInput);
 
         if (awaitingNewInput) {
-            // Swap last operator smoothly if clicked out of order
             if (mathTrack !== "") {
                 mathTrack = mathTrack.slice(0, -2) + op + " ";
                 lastOperator = op;
@@ -178,17 +211,6 @@
     }
 
     function handleClear() {
-        const currentTime = new Date().getTime();
-        
-        if (currentTime - lastClearTime < 400) {
-            isArmed = !isArmed;
-            if (isArmed) {
-                mainDisplay.style.color = "#aeffb4";
-                setTimeout(() => mainDisplay.style.color = "#fff", 120);
-            }
-        }
-        lastClearTime = currentTime;
-
         currentInput = "0";
         runningTotal = 0;
         mathTrack = "";
