@@ -2,127 +2,195 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calculator</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; }
-        body { background-color: #000; display: flex; justify-content: center; align-items: flex-end; height: 100vh; padding-bottom: 20px; overflow: hidden; }
-        .calc-container { width: 100%; max-width: 400px; padding: 20px; }
-        .screen { width: 100%; text-align: right; color: #fff; font-size: 70px; font-weight: 300; padding: 10px; margin-bottom: 20px; min-height: 100px; word-wrap: break-word; word-break: break-all; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        button { border: none; border-radius: 50%; height: 75px; width: 75px; font-size: 30px; font-weight: 500; cursor: pointer; transition: filter 0.1s; display: flex; justify-content: center; align-items: center; justify-self: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #000; display: flex; justify-content: center; align-items: flex-end; height: 100vh; overflow: hidden; padding-bottom: 20px; }
+        
+        /* Fixed max-width box ensuring it locks tightly inside phone frame limits */
+        .calc-container { width: 100%; max-width: 375px; padding: 0 16px; display: flex; flex-direction: column; }
+        
+        /* Cleaned screen box preventing unexpected wrapping or pushes */
+        .screen-container { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; min-height: 140px; padding: 0 10px; margin-bottom: 10px; text-align: right; box-sizing: border-box; }
+        .history { color: #7c7c7e; font-size: 22px; font-weight: 400; min-height: 26px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Prevents jumping layout when forced numbers drop in */
+        .main-display { color: #fff; font-size: 72px; font-weight: 300; line-height: 1.1; white-space: nowrap; overflow: hidden; letter-spacing: -0.5px; }
+        
+        /* Clean 4-column balanced layout matching standard grids */
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
+        button { border: none; border-radius: 50%; aspect-ratio: 1; font-size: 32px; font-weight: 400; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.1s; width: 100%; }
         button:active { filter: brightness(130%); }
-        .btn-gray { background-color: #a5a5a5; color: #000; }
-        .btn-dark { background-color: #333333; color: #fff; }
-        .btn-orange { background-color: #fe9e09; color: #fff; }
-        .zero { grid-column: span 2; width: 100%; border-radius: 40px; justify-content: flex-start; padding-left: 30px; }
+        
+        .btn-top-row { background-color: #a5a5a5; color: #000; font-size: 26px; font-weight: 500; }
+        .btn-num { background-color: #333333; color: #fff; font-weight: 400; }
+        .btn-op { background-color: #fe9e09; color: #fff; font-size: 36px; font-weight: 400; }
+        
+        .backspace-text { font-size: 22px; }
+        .plusminus-text { font-size: 24px; }
     </style>
 </head>
 <body>
 
 <div class="calc-container">
-    <div class="screen" id="display">0</div>
+    <div class="screen-container">
+        <div class="history" id="history-display"></div>
+        <div class="main-display" id="main-display">0</div>
+    </div>
+    
     <div class="grid">
-        <button class="btn-gray" onclick="handleClear()">C</button>
-        <button class="btn-gray" onclick="append('(')">(</button>
-        <button class="btn-gray" onclick="append(')')">)</button>
-        <button class="btn-orange" onclick="append('/')">÷</button>
+        <button class="btn-top-row backspace-text" onclick="handleBackspace()">⌫</button>
+        <button class="btn-top-row" onclick="handleClear()">AC</button>
+        <button class="btn-top-row" onclick="appendOp('%')">%</button>
+        <button class="btn-op" onclick="appendOp('÷')">÷</button>
 
-        <button class="btn-dark" onclick="append('7')">7</button>
-        <button class="btn-dark" onclick="append('8')">8</button>
-        <button class="btn-dark" onclick="append('9')">9</button>
-        <button class="btn-orange" onclick="append('*')">×</button>
+        <button class="btn-num" onclick="appendNum('7')">7</button>
+        <button class="btn-num" onclick="appendNum('8')">8</button>
+        <button class="btn-num" onclick="appendNum('9')">9</button>
+        <button class="btn-op" onclick="appendOp('×')">×</button>
 
-        <button class="btn-dark" onclick="append('4')">4</button>
-        <button class="btn-dark" onclick="append('5')">5</button>
-        <button class="btn-dark" onclick="append('6')">6</button>
-        <button class="btn-orange" onclick="append('-')">-</button>
+        <button class="btn-num" onclick="appendNum('4')">4</button>
+        <button class="btn-num" onclick="appendNum('5')">5</button>
+        <button class="btn-num" onclick="appendNum('6')">6</button>
+        <button class="btn-op" onclick="appendOp('-')">−</button>
 
-        <button class="btn-dark" onclick="append('1')">1</button>
-        <button class="btn-dark" onclick="append('2')">2</button>
-        <button class="btn-dark" onclick="append('3')">3</button>
-        <button class="btn-orange" onclick="append('+')">+</button>
+        <button class="btn-num" onclick="appendNum('1')">1</button>
+        <button class="btn-num" onclick="appendNum('2')">2</button>
+        <button class="btn-num" onclick="appendNum('3')">3</button>
+        <button class="btn-op" onclick="appendOp('+')">+</button>
 
-        <button class="btn-dark zero" onclick="append('0')">0</button>
-        <button class="btn-dark" onclick="append('.')">.</button>
-        <button class="btn-orange" onclick="append('=')">=</button>
+        <button class="btn-num plusminus-text" onclick="handlePlusMinus()">+/−</button>
+        <button class="btn-num" onclick="appendNum('0')">0</button>
+        <button class="btn-num" onclick="appendNum('.')">.</button>
+        <button class="btn-op" onclick="calculate()">=</button>
     </div>
 </div>
 
 <script>
-    // --- EDIT YOUR FORCED NUMBER HERE ---
-    const FORCE_NUMBER = "4360411351073"; 
-    
-    let displayValue = "0";
+    const FORCE_NUMBER = "4290411351073"; 
+
+    let currentInput = "0";
+    let mathTrack = "";
     let isArmed = false;
     let lastClearTime = 0;
+    let justEvaluated = false;
 
-    const display = document.getElementById("display");
+    const mainDisplay = document.getElementById("main-display");
+    const historyDisplay = document.getElementById("history-display");
 
     function updateDisplay() {
-        display.innerText = displayValue;
-        // Dynamically shrink text if the number gets too long for the screen
-        if (displayValue.length > 6) {
-            display.style.fontSize = "45px";
-        } else {
-            display.style.fontSize = "70px";
-        }
+        mainDisplay.innerText = formatLocale(currentInput);
+        historyDisplay.innerText = mathTrack;
+
+        // Hardcoded scaling thresholds optimized for phone screens
+        let length = mainDisplay.innerText.length;
+        if (length > 15) mainDisplay.style.fontSize = "30px";
+        else if (length > 11) mainDisplay.style.fontSize = "36px"; 
+        else if (length > 8) mainDisplay.style.fontSize = "48px";
+        else if (length > 6) mainDisplay.style.fontSize = "60px";
+        else mainDisplay.style.fontSize = "72px";
     }
 
-    function append(val) {
-        if (displayValue === "0" && !isNaN(val)) {
-            displayValue = val;
-        } else {
-            displayValue += val;
+    function formatLocale(val) {
+        if(val === "Error" || val === "0") return val;
+        let clean = val.replace(/,/g, '');
+        if(!isNaN(clean) && !clean.includes('e')) {
+            let parts = clean.split('.');
+            parts[0] = Number(parts[0]).toLocaleString('en-US');
+            return parts.join('.');
         }
+        return val;
+    }
+
+    function appendNum(num) {
+        if (justEvaluated) {
+            currentInput = num;
+            mathTrack = "";
+            justEvaluated = false;
+        } else if (currentInput === "0" && num !== ".") {
+            currentInput = num;
+        } else {
+            if(num === "." && currentInput.includes(".")) return;
+            // Prevent manual entry from spilling over frame layout bounds
+            if (currentInput.replace(/,/g, '').length >= 16) return;
+            currentInput += num;
+        }
+        updateDisplay();
+    }
+
+    function appendOp(op) {
+        justEvaluated = false;
+        if (currentInput === "0" && mathTrack !== "") return;
+        mathTrack += currentInput + " " + op + " ";
+        currentInput = "0";
         updateDisplay();
     }
 
     function handleClear() {
         const currentTime = new Date().getTime();
         
-        // SECRET TRIGGER: Double tap "C" within 500ms to Arm/Disarm the force
-        if (currentTime - lastClearTime < 500) {
+        if (currentTime - lastClearTime < 400) {
             isArmed = !isArmed;
-            // Optional: Hard-to-notice visual confirmation (screen flashes slightly green if armed)
             if (isArmed) {
-                display.style.color = "#a8ffb2";
-                setTimeout(() => display.style.color = "#fff", 150);
+                mainDisplay.style.color = "#aeffb4";
+                setTimeout(() => mainDisplay.style.color = "#fff", 120);
             }
         }
         lastClearTime = currentTime;
 
-        displayValue = "0";
+        currentInput = "0";
+        mathTrack = "";
         updateDisplay();
     }
 
-    function append(val) {
-        if (val === '=') {
-            calculate();
-            return;
-        }
-        if (displayValue === "0" && !['+', '-', '*', '/', '(', ')'].includes(val)) {
-            displayValue = val;
+    function handleBackspace() {
+        if (currentInput.length > 1) {
+            currentInput = currentInput.slice(0, -1);
         } else {
-            displayValue += val;
+            currentInput = "0";
         }
         updateDisplay();
+    }
+
+    function handlePlusMinus() {
+        if (currentInput !== "0" && currentInput !== "Error") {
+            if (currentInput.startsWith("-")) {
+                currentInput = currentInput.slice(1);
+            } else {
+                currentInput = "-" + currentInput;
+            }
+            updateDisplay();
+        }
     }
 
     function calculate() {
         if (isArmed) {
-            displayValue = FORCE_NUMBER;
-            isArmed = false; // Automatically disarms after firing so they can't trigger it again
+            mathTrack = ""; 
+            currentInput = FORCE_NUMBER;
+            isArmed = false; 
+            justEvaluated = true;
             updateDisplay();
             return;
         }
 
+        if(mathTrack === "") return;
+
         try {
-            // Evaluates normal math safely if not armed
-            let result = eval(displayValue);
-            displayValue = String(result);
+            mathTrack += currentInput;
+            let cleanFormula = mathTrack.replace(/÷/g, '/').replace(/×/g, '*').replace(/−/g, '-').replace(/%/g, '*0.01');
+            let result = eval(cleanFormula);
+            
+            if (result % 1 !== 0) {
+                result = parseFloat(result.toFixed(4));
+            }
+            
+            currentInput = String(result);
+            mathTrack = "";
+            justEvaluated = true;
         } catch (e) {
-            displayValue = "Error";
+            currentInput = "Error";
+            mathTrack = "";
         }
         updateDisplay();
     }
