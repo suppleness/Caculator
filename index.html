@@ -5,31 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calculator</title>
     
+    <!-- Native App Visual Overrides -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <!-- Link to the fullscreen configuration file -->
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #000; display: flex; justify-content: center; align-items: flex-end; height: 100vh; overflow: hidden; padding-bottom: 20px; }
+        body { background-color: #000; display: flex; justify-content: center; align-items: flex-end; min-height: 100vh; min-height: -webkit-fill-available; overflow: hidden; padding-bottom: env(safe-area-inset-bottom, 16px); }
+        html { height: -webkit-fill-available; background-color: #000; }
         
-        .calc-container { width: 100%; max-width: 375px; padding: 0 16px; display: flex; flex-direction: column; }
-        
-        .screen-container { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; min-height: 140px; padding: 0 10px; margin-bottom: 10px; text-align: right; box-sizing: border-box; }
+        .calc-container { width: 100%; max-width: 360px; padding: 0 16px; margin-bottom: 8px; display: flex; flex-direction: column; justify-content: flex-end; }
+        .screen-container { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; min-height: 120px; padding: 0 10px; margin-bottom: 8px; text-align: right; box-sizing: border-box; }
         .history { color: #7c7c7e; font-size: 22px; font-weight: 400; min-height: 26px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: right; }
-        
         .main-display { color: #fff; font-size: 72px; font-weight: 300; line-height: 1.1; white-space: nowrap; overflow: hidden; letter-spacing: -0.5px; }
         
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
-        button { border: none; border-radius: 50%; aspect-ratio: 1; font-size: 32px; font-weight: 400; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.1s; width: 100%; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+        button { border: none; border-radius: 50%; aspect-ratio: 1; font-size: 30px; font-weight: 400; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.1s; width: 100%; }
         button:active { filter: brightness(130%); }
         
-        .btn-top-row { background-color: #a5a5a5; color: #000; font-size: 26px; font-weight: 500; }
+        .btn-top-row { background-color: #a5a5a5; color: #000; font-size: 24px; font-weight: 500; }
         .btn-num { background-color: #333333; color: #fff; font-weight: 400; }
-        .btn-op { background-color: #fe9e09; color: #fff; font-size: 36px; font-weight: 400; }
+        .btn-op { background-color: #fe9e09; color: #fff; font-size: 34px; font-weight: 400; }
         
-        .backspace-text { font-size: 22px; }
-        .plusminus-text { font-size: 24px; }
+        .backspace-text { font-size: 20px; }
+        .plusminus-text { font-size: 22px; }
     </style>
 </head>
 <body>
@@ -42,13 +45,11 @@
     
     <div class="grid">
         <button class="btn-top-row backspace-text" onclick="handleBackspace()">⌫</button>
-        
         <button class="btn-top-row" 
                 onmousedown="startPress()" 
                 onmouseup="endPress()" 
                 ontouchstart="startPress()" 
                 ontouchend="endPress()">AC</button>
-                
         <button class="btn-top-row" onclick="appendOp('%')">%</button>
         <button class="btn-op" onclick="appendOp('÷')">÷</button>
 
@@ -114,19 +115,16 @@
         return val;
     }
 
-    /* Long-Press Capture System */
     function startPress() {
         isLongPress = false;
         pressTimer = setTimeout(() => {
             isLongPress = true;
             isArmed = !isArmed;
-            
-            // Subtle flash indicator to tell you engine status
             if (isArmed) {
                 mainDisplay.style.color = "#aeffb4";
                 setTimeout(() => mainDisplay.style.color = "#fff", 120);
             }
-        }, 500); // 500ms hold requirement
+        }, 500); 
     }
 
     function endPress() {
@@ -276,7 +274,27 @@
         awaitingNewInput = false;
         updateDisplay(finalResult);
     }
+
+    // --- OFF-LINE AUTOMATIC INSTALLATION ENGINE ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const codeBlob = new Blob([`
+                const CACHE_NAME = 'calc-v1';
+                self.addEventListener('install', e => {
+                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['/', './', 'index.html'])));
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+                });
+            `], { type: 'application/javascript' });
+            
+            const workerUrl = URL.createObjectURL(codeBlob);
+            navigator.serviceWorker.register(workerUrl, { scope: './' })
+                .then(() => console.log('Offline Engine Secured.'))
+                .catch(err => console.log('Offline failed:', err));
+        });
+    }
 </script>
 
 </body>
-</html>
+</html
